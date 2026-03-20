@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/videoconf
+    username: videoconf
+    password: videoconf
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8181/realms/video-conf/protocol/openid-connect/certs}
+
+app:
+  jwt:
+    issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8181/realms/video-conf}
+  keycloak:
+    base-url: ${KEYCLOAK_ADMIN_BASE_URL:http://localhost:8181}
+    realm: ${KEYCLOAK_ADMIN_REALM_NAME:video-conf}
+    master-username: ${KEYCLOAK_MASTER_USERNAME:admin}
+    master-password: ${KEYCLOAK_MASTER_PASSWORD:admin}
