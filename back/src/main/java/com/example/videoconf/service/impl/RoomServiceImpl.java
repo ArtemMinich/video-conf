@@ -10,6 +10,7 @@ import com.example.videoconf.repository.RoomRepository;
 import com.example.videoconf.service.RoomService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RoomServiceImpl implements RoomService {
 
     private static final int MAX_PARTICIPANTS = 2;
@@ -34,20 +36,25 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional
     public RoomResponseDto createRoom(RoomCreateDto dto) {
+        log.info("Creating room: {}", dto.getRoomId());
         Room room = Room.builder()
                 .roomId(dto.getRoomId())
                 .status(RoomStatus.WAITING)
                 .build();
-        return roomMapper.toDto(roomRepository.save(room));
+        Room saved = roomRepository.save(room);
+        log.info("Room created: {}", saved.getRoomId());
+        return roomMapper.toDto(saved);
     }
 
     @Override
     @Transactional
     public RoomResponseDto joinRoom(String roomId, String username, String keycloakUserId) {
+        log.info("User {} joining room {}", username, roomId);
         Room room = roomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
         if (room.getStatus() == RoomStatus.CLOSED) {
+            log.warn("User {} tried to join closed room {}", username, roomId);
             throw new RuntimeException("Room is closed");
         }
 
@@ -56,6 +63,7 @@ public class RoomServiceImpl implements RoomService {
                 .count();
 
         if (activeCount >= MAX_PARTICIPANTS) {
+            log.warn("User {} tried to join full room {}", username, roomId);
             throw new RuntimeException("Room is full");
         }
 
@@ -75,9 +83,11 @@ public class RoomServiceImpl implements RoomService {
                     .count();
             if (newActiveCount == MAX_PARTICIPANTS) {
                 room.setStatus(RoomStatus.ACTIVE);
+                log.info("Room {} is now ACTIVE ({} participants)", roomId, newActiveCount);
             }
 
             roomRepository.save(room);
+            log.info("User {} joined room {}", username, roomId);
         }
 
         return roomMapper.toDto(room);
@@ -86,6 +96,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional
     public void leaveRoom(String roomId, String username) {
+        log.info("User {} leaving room {}", username, roomId);
         Room room = roomRepository.findByRoomId(roomId).orElse(null);
         if (room == null) return;
 
@@ -100,8 +111,10 @@ public class RoomServiceImpl implements RoomService {
         if (activeCount == 0) {
             room.setStatus(RoomStatus.CLOSED);
             room.setClosedAt(LocalDateTime.now());
+            log.info("Room {} closed (no participants left)", roomId);
         } else {
             room.setStatus(RoomStatus.WAITING);
+            log.info("Room {} back to WAITING ({} participants)", roomId, activeCount);
         }
 
         roomRepository.save(room);
@@ -110,6 +123,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional
     public void closeRoom(String roomId) {
+        log.info("Closing room: {}", roomId);
         Room room = roomRepository.findByRoomId(roomId).orElse(null);
         if (room == null) return;
 
@@ -120,5 +134,6 @@ public class RoomServiceImpl implements RoomService {
         room.setStatus(RoomStatus.CLOSED);
         room.setClosedAt(LocalDateTime.now());
         roomRepository.save(room);
+        log.info("Room {} closed", roomId);
     }
 }

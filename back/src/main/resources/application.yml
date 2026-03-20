@@ -18,6 +18,19 @@ spring:
         jwt:
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8181/realms/video-conf/protocol/openid-connect/certs}
 
+logging:
+  file:
+    name: logs/videoconf.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 500MB
+  level:
+    com.example.videoconf: DEBUG
+    org.springframework.security: WARN
+    org.springframework.web: INFO
+
 app:
   jwt:
     issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8181/realms/video-conf}

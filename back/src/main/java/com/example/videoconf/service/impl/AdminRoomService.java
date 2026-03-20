@@ -9,6 +9,7 @@ import com.example.videoconf.repository.RoomRepository;
 import com.example.videoconf.service.SignalingService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminRoomService {
 
     private final RoomRepository roomRepository;
@@ -45,11 +47,14 @@ public class AdminRoomService {
                 .roomId(dto.getRoomId())
                 .status(RoomStatus.WAITING)
                 .build();
-        return roomMapper.toDto(roomRepository.save(room));
+        Room saved = roomRepository.save(room);
+        log.info("Admin created room: {}", saved.getRoomId());
+        return roomMapper.toDto(saved);
     }
 
     @Transactional
     public void forceCloseRoom(String roomId) {
+        log.warn("Admin force-closing room: {}", roomId);
         Room room = roomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
@@ -62,14 +67,17 @@ public class AdminRoomService {
         room.setStatus(RoomStatus.CLOSED);
         room.setClosedAt(LocalDateTime.now());
         roomRepository.save(room);
+        log.warn("Admin force-closed room: {}", roomId);
     }
 
     @Transactional
     public void deleteRoom(String roomId) {
+        log.warn("Admin deleting room: {}", roomId);
         Room room = roomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
         signalingService.forceDisconnectAll(roomId);
         roomRepository.delete(room);
+        log.warn("Admin deleted room: {}", roomId);
     }
 }

@@ -1,0 +1,30 @@
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Java / Maven
+back/target/
+back/*.jar
+back/logs/
+
+# Node
+front/node_modules/
+front/dist/
+
+# Certificates
+certs/
+
+# WireGuard configs
+wireguard/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

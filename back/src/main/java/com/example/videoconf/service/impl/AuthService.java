@@ -3,6 +3,7 @@ package com.example.videoconf.service.impl;
 import com.example.videoconf.dto.AuthResponseDto;
 import com.example.videoconf.dto.LoginRequestDto;
 import com.example.videoconf.dto.RegisterRequestDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class AuthService {
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -32,6 +34,7 @@ public class AuthService {
     private String masterPassword;
 
     public AuthResponseDto login(LoginRequestDto request) {
+        log.info("Login attempt for user: {}", request.getUsername());
         String tokenUrl = keycloakBaseUrl + "/realms/" + realm + "/protocol/openid-connect/token";
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -47,17 +50,20 @@ public class AuthService {
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     tokenUrl, new HttpEntity<>(params, headers), Map.class);
             Map<String, Object> body = response.getBody();
+            log.info("Login successful for user: {}", request.getUsername());
             return new AuthResponseDto(
                     (String) body.get("access_token"),
                     (String) body.get("refresh_token"),
                     (Integer) body.get("expires_in")
             );
         } catch (HttpClientErrorException e) {
+            log.warn("Login failed for user: {} - {}", request.getUsername(), e.getStatusCode());
             throw new IllegalArgumentException("Invalid username or password");
         }
     }
 
     public AuthResponseDto refresh(String refreshToken) {
+        log.debug("Token refresh requested");
         String tokenUrl = keycloakBaseUrl + "/realms/" + realm + "/protocol/openid-connect/token";
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -72,17 +78,20 @@ public class AuthService {
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     tokenUrl, new HttpEntity<>(params, headers), Map.class);
             Map<String, Object> body = response.getBody();
+            log.debug("Token refresh successful");
             return new AuthResponseDto(
                     (String) body.get("access_token"),
                     (String) body.get("refresh_token"),
                     (Integer) body.get("expires_in")
             );
         } catch (HttpClientErrorException e) {
+            log.warn("Token refresh failed: {}", e.getStatusCode());
             throw new IllegalArgumentException("Invalid or expired refresh token");
         }
     }
 
     public void register(RegisterRequestDto request) {
+        log.info("Registration attempt for user: {}", request.getUsername());
         String masterToken = getMasterToken();
 
         String usersUrl = keycloakBaseUrl + "/admin/realms/" + realm + "/users";
@@ -109,10 +118,13 @@ public class AuthService {
                         .replaceAll(".*/([^/]+)$", "$1");
                 setUserPassword(userId, request.getPassword(), masterToken);
                 assignUserRole(userId, masterToken);
+                log.info("Registration successful for user: {}, keycloakId: {}", request.getUsername(), userId);
             }
         } catch (HttpClientErrorException.Conflict e) {
+            log.warn("Registration conflict - user already exists: {}", request.getUsername());
             throw new IllegalArgumentException("User already exists: " + request.getUsername());
         } catch (HttpClientErrorException e) {
+            log.error("Registration failed for user: {} - {}", request.getUsername(), e.getStatusCode());
             throw new RuntimeException("Failed to create user: " + e.getStatusCode());
         }
     }
