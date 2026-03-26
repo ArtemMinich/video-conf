@@ -18,7 +18,7 @@ function Login({ onLogin }: LoginProps) {
     setLoading(true);
     try {
       const res = await loginRequest(username, password);
-      setTokens(res.data.accessToken, res.data.refreshToken);
+      setTokens(res.accessToken, res.refreshToken);
       onLogin();
     } catch {
       setError('Invalid username or password');

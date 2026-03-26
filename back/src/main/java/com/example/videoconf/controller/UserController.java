@@ -1,37 +1,29 @@
 package com.example.videoconf.controller;
 
 import com.example.videoconf.dto.UserResponseDto;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+import com.example.videoconf.service.SecurityService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
-import java.util.List;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/users")
 @PreAuthorize("isAuthenticated()")
+@RequiredArgsConstructor
 public class UserController {
 
+    private final SecurityService securityService;
+
     @GetMapping("/me")
-    public UserResponseDto getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
+    public UserResponseDto getCurrentUser() {
         UserResponseDto dto = new UserResponseDto();
-        dto.setUsername(jwt.getClaimAsString("preferred_username"));
-        dto.setEmail(jwt.getClaimAsString("email"));
-        dto.setFirstName(jwt.getClaimAsString("given_name"));
-        dto.setLastName(jwt.getClaimAsString("family_name"));
-
-        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        if (realmAccess != null && realmAccess.containsKey("roles")) {
-            dto.setRoles((List<String>) realmAccess.get("roles"));
-        } else {
-            dto.setRoles(List.of());
-        }
-
+        dto.setUsername(securityService.getUsername());
+        dto.setEmail(securityService.getEmail());
+        dto.setFirstName(securityService.getFirstName());
+        dto.setLastName(securityService.getLastName());
+        dto.setRoles(securityService.getRoles());
         return dto;
     }
 }

@@ -12,11 +12,6 @@ spring:
     show-sql: false
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8181/realms/video-conf/protocol/openid-connect/certs}
 
 logging:
   file:
@@ -32,8 +27,6 @@ logging:
     org.springframework.web: INFO
 
 app:
-  jwt:
-    issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8181/realms/video-conf}
   keycloak:
     base-url: ${KEYCLOAK_ADMIN_BASE_URL:http://localhost:8181}
     realm: ${KEYCLOAK_ADMIN_REALM_NAME:video-conf}

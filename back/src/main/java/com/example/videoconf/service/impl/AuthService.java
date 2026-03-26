@@ -1,7 +1,5 @@
 package com.example.videoconf.service.impl;
 
-import com.example.videoconf.dto.AuthResponseDto;
-import com.example.videoconf.dto.LoginRequestDto;
 import com.example.videoconf.dto.RegisterRequestDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,63 +30,6 @@ public class AuthService {
 
     @Value("${app.keycloak.master-password}")
     private String masterPassword;
-
-    public AuthResponseDto login(LoginRequestDto request) {
-        log.info("Login attempt for user: {}", request.getUsername());
-        String tokenUrl = keycloakBaseUrl + "/realms/" + realm + "/protocol/openid-connect/token";
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "password");
-        params.add("client_id", "video-conf-client");
-        params.add("username", request.getUsername());
-        params.add("password", request.getPassword());
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    tokenUrl, new HttpEntity<>(params, headers), Map.class);
-            Map<String, Object> body = response.getBody();
-            log.info("Login successful for user: {}", request.getUsername());
-            return new AuthResponseDto(
-                    (String) body.get("access_token"),
-                    (String) body.get("refresh_token"),
-                    (Integer) body.get("expires_in")
-            );
-        } catch (HttpClientErrorException e) {
-            log.warn("Login failed for user: {} - {}", request.getUsername(), e.getStatusCode());
-            throw new IllegalArgumentException("Invalid username or password");
-        }
-    }
-
-    public AuthResponseDto refresh(String refreshToken) {
-        log.debug("Token refresh requested");
-        String tokenUrl = keycloakBaseUrl + "/realms/" + realm + "/protocol/openid-connect/token";
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "refresh_token");
-        params.add("client_id", "video-conf-client");
-        params.add("refresh_token", refreshToken);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    tokenUrl, new HttpEntity<>(params, headers), Map.class);
-            Map<String, Object> body = response.getBody();
-            log.debug("Token refresh successful");
-            return new AuthResponseDto(
-                    (String) body.get("access_token"),
-                    (String) body.get("refresh_token"),
-                    (Integer) body.get("expires_in")
-            );
-        } catch (HttpClientErrorException e) {
-            log.warn("Token refresh failed: {}", e.getStatusCode());
-            throw new IllegalArgumentException("Invalid or expired refresh token");
-        }
-    }
 
     public void register(RegisterRequestDto request) {
         log.info("Registration attempt for user: {}", request.getUsername());
