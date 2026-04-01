@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-file-permissions-table
+      author: videoconf
+      changes:
+        - createTable:
+            tableName: file_permissions
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: keycloak_user_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: path
+                  type: varchar(1024)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: permission_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: granted_by
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - addUniqueConstraint:
+            tableName: file_permissions
+            columnNames: keycloak_user_id, path, permission_type
+            constraintName: uq_file_permissions_user_path_type
+        - createIndex:
+            tableName: file_permissions
+            indexName: idx_file_permissions_user_id
+            columns:
+              - column:
+                  name: keycloak_user_id
+        - createIndex:
+            tableName: file_permissions
+            indexName: idx_file_permissions_path
+            columns:
+              - column:
+                  name: path

@@ -19,7 +19,45 @@ export interface Room {
 export interface Participant {
   id: number;
   username: string;
-  keycloakUserId: string;
   joinedAt: string;
   leftAt: string | null;
+}
+
+export interface DirectoryListing {
+  items: FileItem[];
+  canWrite: boolean;
+}
+
+export interface FileItem {
+  name: string;
+  path: string;
+  directory: boolean;
+  size: number;
+  lastModified: string;
+  canRead: boolean;
+  canWrite: boolean;
+}
+
+export interface FilePermission {
+  id: number;
+  userId: number;
+  username: string;
+  path: string;
+  permissionType: 'READ' | 'WRITE';
+  grantedBy: string;
+  createdAt: string;
+}
+
+export interface GrantPermissionRequest {
+  userId: number;
+  path: string;
+  permissionType: 'READ' | 'WRITE';
+}
+
+export interface UserSearchResult {
+  id: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
 }

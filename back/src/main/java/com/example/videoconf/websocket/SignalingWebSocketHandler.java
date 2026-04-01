@@ -1,5 +1,7 @@
 package com.example.videoconf.websocket;
 
+import com.example.videoconf.model.User;
+import com.example.videoconf.repository.UserRepository;
 import com.example.videoconf.service.RoomService;
 import com.example.videoconf.service.SignalingService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,6 +29,7 @@ public class SignalingWebSocketHandler extends TextWebSocketHandler {
     private final RoomService roomService;
     private final JwtDecoder jwtDecoder;
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
 
     private final Map<String, String> sessionRoomMap = new ConcurrentHashMap<>();
     private final Map<String, String> sessionUserMap = new ConcurrentHashMap<>();
@@ -68,23 +71,27 @@ public class SignalingWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        String username = jwt.getClaimAsString("preferred_username");
-        String keycloakUserId = jwt.getSubject();
+        String email = jwt.getClaimAsString("email");
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            sendError(session, "User not found");
+            return;
+        }
 
         try {
-            roomService.joinRoom(roomId, username, keycloakUserId);
+            roomService.joinRoom(roomId, user);
         } catch (RuntimeException e) {
             sendError(session, e.getMessage());
             return;
         }
 
         sessionRoomMap.put(session.getId(), roomId);
-        sessionUserMap.put(session.getId(), username);
+        sessionUserMap.put(session.getId(), user.getUsername());
 
         signalingService.addSession(roomId, session);
         signalingService.notifyPeerJoined(roomId, session);
 
-        log.info("User {} joined room {}", username, roomId);
+        log.info("User {} joined room {}", user.getUsername(), roomId);
     }
 
     private void handleRelay(WebSocketSession session, String message) {

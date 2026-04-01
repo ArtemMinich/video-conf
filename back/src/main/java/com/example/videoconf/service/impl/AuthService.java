@@ -1,6 +1,9 @@
 package com.example.videoconf.service.impl;
 
 import com.example.videoconf.dto.RegisterRequestDto;
+import com.example.videoconf.model.User;
+import com.example.videoconf.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -15,8 +18,10 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AuthService {
 
+    private final UserRepository userRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${app.keycloak.base-url}")
@@ -33,8 +38,12 @@ public class AuthService {
 
     public void register(RegisterRequestDto request) {
         log.info("Registration attempt for user: {}", request.getUsername());
-        String masterToken = getMasterToken();
 
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("User already exists: " + request.getUsername());
+        }
+
+        String masterToken = getMasterToken();
         String usersUrl = keycloakBaseUrl + "/admin/realms/" + realm + "/users";
 
         HttpHeaders headers = new HttpHeaders();
@@ -44,9 +53,6 @@ public class AuthService {
         Map<String, Object> userBody = Map.of(
                 "username", request.getUsername(),
                 "email", request.getEmail(),
-                "emailVerified", true,
-                "firstName", request.getFirstName() != null ? request.getFirstName() : "",
-                "lastName", request.getLastName() != null ? request.getLastName() : "",
                 "enabled", true
         );
 
@@ -55,14 +61,22 @@ public class AuthService {
                     usersUrl, new HttpEntity<>(userBody, headers), Void.class);
 
             if (response.getStatusCode().value() == 201 && response.getHeaders().getLocation() != null) {
-                String userId = response.getHeaders().getLocation().getPath()
+                String keycloakUserId = response.getHeaders().getLocation().getPath()
                         .replaceAll(".*/([^/]+)$", "$1");
-                setUserPassword(userId, request.getPassword(), masterToken);
-                assignUserRole(userId, masterToken);
-                log.info("Registration successful for user: {}, keycloakId: {}", request.getUsername(), userId);
+                setUserPassword(keycloakUserId, request.getPassword(), masterToken);
+                assignUserRole(keycloakUserId, masterToken);
+
+                userRepository.save(User.builder()
+                        .username(request.getUsername())
+                        .email(request.getEmail())
+                        .firstName(request.getFirstName() != null ? request.getFirstName() : "")
+                        .lastName(request.getLastName() != null ? request.getLastName() : "")
+                        .build());
+
+                log.info("Registration successful for user: {}", request.getUsername());
             }
         } catch (HttpClientErrorException.Conflict e) {
-            log.warn("Registration conflict - user already exists: {}", request.getUsername());
+            log.warn("Registration conflict - user already exists in Keycloak: {}", request.getUsername());
             throw new IllegalArgumentException("User already exists: " + request.getUsername());
         } catch (HttpClientErrorException e) {
             log.error("Registration failed for user: {} - {}", request.getUsername(), e.getStatusCode());

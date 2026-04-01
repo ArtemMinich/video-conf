@@ -1,0 +1,76 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-remove-keycloak-user-id
+      author: system
+      changes:
+        # --- clear existing data (will be re-seeded by DataInitializer) ---
+        - delete:
+            tableName: file_permissions
+        - delete:
+            tableName: participants
+
+        # --- users table ---
+        - dropColumn:
+            tableName: users
+            columnName: keycloak_user_id
+        - addUniqueConstraint:
+            tableName: users
+            columnNames: email
+            constraintName: uq_users_email
+
+        # --- file_permissions table ---
+        - dropIndex:
+            tableName: file_permissions
+            indexName: idx_file_permissions_user_id
+        - dropUniqueConstraint:
+            tableName: file_permissions
+            constraintName: uq_file_permissions_user_path_type
+        - dropColumn:
+            tableName: file_permissions
+            columnName: keycloak_user_id
+        - addColumn:
+            tableName: file_permissions
+            columns:
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: file_permissions
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_file_permissions_user
+        - addUniqueConstraint:
+            tableName: file_permissions
+            columnNames: user_id, path, permission_type
+            constraintName: uq_file_permissions_user_path_type
+        - createIndex:
+            tableName: file_permissions
+            indexName: idx_file_permissions_user_id
+            columns:
+              - column:
+                  name: user_id
+
+        # --- participants table ---
+        - dropColumn:
+            tableName: participants
+            columnName: keycloak_user_id
+        - dropColumn:
+            tableName: participants
+            columnName: username
+        - addColumn:
+            tableName: participants
+            columns:
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: participants
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_participants_user

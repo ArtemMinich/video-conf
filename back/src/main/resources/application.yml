@@ -12,6 +12,10 @@ spring:
     show-sql: false
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
 
 logging:
   file:
@@ -27,6 +31,8 @@ logging:
     org.springframework.web: INFO
 
 app:
+  file-storage:
+    root-path: ${FILE_STORAGE_PATH:/data/files}
   keycloak:
     base-url: ${KEYCLOAK_ADMIN_BASE_URL:http://localhost:8181}
     realm: ${KEYCLOAK_ADMIN_REALM_NAME:video-conf}

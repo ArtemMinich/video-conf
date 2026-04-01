@@ -22,11 +22,9 @@ public class Participant {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @Column(nullable = false)
-    private String username;
-
-    @Column(name = "keycloak_user_id")
-    private String keycloakUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "joined_at", updatable = false)
     private LocalDateTime joinedAt;

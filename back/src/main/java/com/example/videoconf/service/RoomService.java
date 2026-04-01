@@ -2,6 +2,7 @@ package com.example.videoconf.service;
 
 import com.example.videoconf.dto.RoomCreateDto;
 import com.example.videoconf.dto.RoomResponseDto;
+import com.example.videoconf.model.User;
 
 public interface RoomService {
 
@@ -9,7 +10,7 @@ public interface RoomService {
 
     RoomResponseDto createRoom(RoomCreateDto dto);
 
-    RoomResponseDto joinRoom(String roomId, String username, String keycloakUserId);
+    RoomResponseDto joinRoom(String roomId, User user);
 
     void leaveRoom(String roomId, String username);
 

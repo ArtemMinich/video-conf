@@ -3,3 +3,9 @@ databaseChangeLog:
       file: db/changelog/changes/001-create-rooms-table.yaml
   - include:
       file: db/changelog/changes/002-create-participants-table.yaml
+  - include:
+      file: db/changelog/changes/003-create-file-permissions-table.yaml
+  - include:
+      file: db/changelog/changes/004-create-users-table.yaml
+  - include:
+      file: db/changelog/changes/005-remove-keycloak-user-id.yaml

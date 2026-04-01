@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 public class ParticipantResponseDto {
     private Long id;
     private String username;
-    private String keycloakUserId;
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;
 }

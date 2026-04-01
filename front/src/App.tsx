@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
 import { isAuthenticated, clearTokens } from './auth';
 import Navbar from './components/Navbar';
-import JoinRoom from './components/JoinRoom';
-import VideoRoom from './components/VideoRoom';
-import AdminPanel from './components/admin/AdminPanel';
-import Login from './components/Login';
-import Register from './components/Register';
+import AppRouter from './router';
 import type { UserInfo } from './types';
 import api from './api';
 
@@ -58,26 +53,15 @@ function App() {
         <Navbar userInfo={userInfo} isAdmin={isAdmin} onLogout={handleLogout} />
       )}
       <div style={{ maxWidth: roomId ? undefined : '1100px', margin: '0 auto' }}>
-        <Routes>
-          <Route path="/login" element={
-            authenticated ? <Navigate to="/" replace /> : <Login onLogin={handleLogin} />
-          } />
-          <Route path="/register" element={
-            authenticated ? <Navigate to="/" replace /> : <Register />
-          } />
-          <Route path="/" element={
-            !authenticated ? <Navigate to="/login" replace /> :
-              roomId ? (
-                <VideoRoom roomId={roomId} onLeave={() => setRoomId(null)} />
-              ) : (
-                <JoinRoom onJoin={(id) => setRoomId(id)} />
-              )
-          } />
-          <Route path="/admin" element={
-            !authenticated ? <Navigate to="/login" replace /> :
-              isAdmin ? <AdminPanel /> : <Navigate to="/" replace />
-          } />
-        </Routes>
+        <AppRouter
+          authenticated={authenticated}
+          userInfo={userInfo}
+          isAdmin={isAdmin}
+          roomId={roomId}
+          onLogin={handleLogin}
+          onJoinRoom={(id) => setRoomId(id)}
+          onLeaveRoom={() => setRoomId(null)}
+        />
       </div>
     </div>
   );

@@ -1,37 +1,29 @@
 package com.example.videoconf.service.impl;
 
+import com.example.videoconf.model.User;
+import com.example.videoconf.repository.UserRepository;
 import com.example.videoconf.service.SecurityService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Service("securityService")
+@RequiredArgsConstructor
 public class SecurityServiceImpl implements SecurityService {
+
+    private final UserRepository userRepository;
 
     @Override
     public String getUsername() {
         return getJwt().getClaimAsString("preferred_username");
-    }
-
-    @Override
-    public String getEmail() {
-        return getJwt().getClaimAsString("email");
-    }
-
-    @Override
-    public String getFirstName() {
-        return getJwt().getClaimAsString("given_name");
-    }
-
-    @Override
-    public String getLastName() {
-        return getJwt().getClaimAsString("family_name");
     }
 
     @Override
@@ -41,6 +33,27 @@ public class SecurityServiceImpl implements SecurityService {
             return List.of();
         }
         return (List<String>) realmAccess.get("roles");
+    }
+
+    @Override
+    @Transactional
+    public User getCurrentUser() {
+        Jwt jwt = getJwt();
+        String email = jwt.getClaimAsString("email");
+        String username = jwt.getClaimAsString("preferred_username");
+
+        if (email != null) {
+            return userRepository.findByEmail(email)
+                    .orElseGet(() -> userRepository.save(User.builder()
+                            .email(email)
+                            .username(username)
+                            .firstName(jwt.getClaimAsString("given_name"))
+                            .lastName(jwt.getClaimAsString("family_name"))
+                            .build()));
+        }
+
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + username));
     }
 
     @Override

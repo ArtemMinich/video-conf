@@ -3,6 +3,17 @@
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
+  "requiredActions": [
+    {
+      "alias": "VERIFY_PROFILE",
+      "name": "Verify Profile",
+      "providerId": "VERIFY_PROFILE",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 90,
+      "config": {}
+    }
+  ],
   "roles": {
     "realm": [
       {
@@ -43,10 +54,12 @@
   "users": [
     {
       "username": "user1",
-      "enabled": true,
       "email": "user1@example.com",
+      "emailVerified": true,
       "firstName": "User",
       "lastName": "One",
+      "enabled": true,
+      "requiredActions": [],
       "credentials": [
         {
           "type": "password",
@@ -60,10 +73,12 @@
     },
     {
       "username": "user2",
-      "enabled": true,
       "email": "user2@example.com",
+      "emailVerified": true,
       "firstName": "User",
       "lastName": "Two",
+      "enabled": true,
+      "requiredActions": [],
       "credentials": [
         {
           "type": "password",
@@ -77,10 +92,12 @@
     },
     {
       "username": "admin1",
-      "enabled": true,
       "email": "admin1@example.com",
+      "emailVerified": true,
       "firstName": "Admin",
       "lastName": "One",
+      "enabled": true,
+      "requiredActions": [],
       "credentials": [
         {
           "type": "password",

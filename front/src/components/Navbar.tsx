@@ -11,6 +11,19 @@ function Navbar({ userInfo, isAdmin, onLogout }: NavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const isOnAdmin = location.pathname === '/admin';
+  const isOnFiles = location.pathname === '/files';
+
+  const navBtn = (color: string): React.CSSProperties => ({
+    padding: '6px 12px',
+    backgroundColor: color,
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '13px',
+    whiteSpace: 'nowrap',
+  });
 
   return (
     <nav style={{
@@ -32,20 +45,16 @@ function Navbar({ userInfo, isAdmin, onLogout }: NavbarProps) {
       </h3>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         {userInfo && <span style={{ fontSize: '14px', whiteSpace: 'nowrap' }}>{userInfo.firstName} {userInfo.lastName}</span>}
+        <button
+          onClick={() => navigate(isOnFiles ? '/' : '/files')}
+          style={navBtn(isOnFiles ? '#ff9800' : '#7289da')}
+        >
+          {isOnFiles ? 'Back' : 'Files'}
+        </button>
         {isAdmin && (
           <button
             onClick={() => navigate(isOnAdmin ? '/' : '/admin')}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: isOnAdmin ? '#ff9800' : '#43b581',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              whiteSpace: 'nowrap',
-            }}
+            style={navBtn(isOnAdmin ? '#ff9800' : '#43b581')}
           >
             {isOnAdmin ? 'Back' : 'Admin'}
           </button>

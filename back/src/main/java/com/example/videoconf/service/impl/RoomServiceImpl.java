@@ -6,6 +6,7 @@ import com.example.videoconf.mapper.RoomMapper;
 import com.example.videoconf.model.Participant;
 import com.example.videoconf.model.Room;
 import com.example.videoconf.model.RoomStatus;
+import com.example.videoconf.model.User;
 import com.example.videoconf.repository.RoomRepository;
 import com.example.videoconf.service.RoomService;
 import jakarta.persistence.EntityNotFoundException;
@@ -48,13 +49,13 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     @Transactional
-    public RoomResponseDto joinRoom(String roomId, String username, String keycloakUserId) {
-        log.info("User {} joining room {}", username, roomId);
+    public RoomResponseDto joinRoom(String roomId, User user) {
+        log.info("User {} joining room {}", user.getUsername(), roomId);
         Room room = roomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
         if (room.getStatus() == RoomStatus.CLOSED) {
-            log.warn("User {} tried to join closed room {}", username, roomId);
+            log.warn("User {} tried to join closed room {}", user.getUsername(), roomId);
             throw new RuntimeException("Room is closed");
         }
 
@@ -63,18 +64,17 @@ public class RoomServiceImpl implements RoomService {
                 .count();
 
         if (activeCount >= MAX_PARTICIPANTS) {
-            log.warn("User {} tried to join full room {}", username, roomId);
+            log.warn("User {} tried to join full room {}", user.getUsername(), roomId);
             throw new RuntimeException("Room is full");
         }
 
         boolean alreadyIn = room.getParticipants().stream()
-                .anyMatch(p -> p.getKeycloakUserId().equals(keycloakUserId) && p.getLeftAt() == null);
+                .anyMatch(p -> p.getUser().getId().equals(user.getId()) && p.getLeftAt() == null);
 
         if (!alreadyIn) {
             Participant participant = Participant.builder()
                     .room(room)
-                    .username(username)
-                    .keycloakUserId(keycloakUserId)
+                    .user(user)
                     .build();
             room.getParticipants().add(participant);
 
@@ -87,7 +87,7 @@ public class RoomServiceImpl implements RoomService {
             }
 
             roomRepository.save(room);
-            log.info("User {} joined room {}", username, roomId);
+            log.info("User {} joined room {}", user.getUsername(), roomId);
         }
 
         return roomMapper.toDto(room);
@@ -101,7 +101,7 @@ public class RoomServiceImpl implements RoomService {
         if (room == null) return;
 
         room.getParticipants().stream()
-                .filter(p -> p.getUsername().equals(username) && p.getLeftAt() == null)
+                .filter(p -> p.getUser().getUsername().equals(username) && p.getLeftAt() == null)
                 .forEach(p -> p.setLeftAt(LocalDateTime.now()));
 
         long activeCount = room.getParticipants().stream()

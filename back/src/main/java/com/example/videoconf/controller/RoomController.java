@@ -2,14 +2,14 @@ package com.example.videoconf.controller;
 
 import com.example.videoconf.dto.RoomCreateDto;
 import com.example.videoconf.dto.RoomResponseDto;
+import com.example.videoconf.model.User;
 import com.example.videoconf.service.RoomService;
+import com.example.videoconf.service.SecurityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class RoomController {
 
     private final RoomService roomService;
+    private final SecurityService securityService;
 
     @GetMapping("/{roomId}")
     public RoomResponseDto getRoom(@PathVariable String roomId) {
@@ -31,15 +32,14 @@ public class RoomController {
     }
 
     @PostMapping("/{roomId}/join")
-    public RoomResponseDto joinRoom(@PathVariable String roomId, @AuthenticationPrincipal Jwt jwt) {
-        String username = jwt.getClaimAsString("preferred_username");
-        String keycloakUserId = jwt.getSubject();
-        return roomService.joinRoom(roomId, username, keycloakUserId);
+    public RoomResponseDto joinRoom(@PathVariable String roomId) {
+        User user = securityService.getCurrentUser();
+        return roomService.joinRoom(roomId, user);
     }
 
     @PostMapping("/{roomId}/leave")
-    public ResponseEntity<Void> leaveRoom(@PathVariable String roomId, @AuthenticationPrincipal Jwt jwt) {
-        String username = jwt.getClaimAsString("preferred_username");
+    public ResponseEntity<Void> leaveRoom(@PathVariable String roomId) {
+        String username = securityService.getUsername();
         roomService.leaveRoom(roomId, username);
         return ResponseEntity.noContent().build();
     }
