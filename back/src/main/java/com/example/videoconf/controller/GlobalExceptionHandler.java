@@ -58,8 +58,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGeneral(Exception ex) {
-        log.error("Unhandled exception: {}", ex.getMessage(), ex);
+        // Log full details server-side for debugging
+        log.error("Unhandled exception", ex);
+        // Never expose ex.getMessage() to the client — it may contain filesystem paths,
+        // SQL details, or stack traces that help an attacker.
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDto(500, ex.getMessage(), LocalDateTime.now()));
+                .body(new ErrorResponseDto(500, "Internal server error", LocalDateTime.now()));
     }
 }

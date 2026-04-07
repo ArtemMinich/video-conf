@@ -1,0 +1,17 @@
+services:
+  front:
+    build:
+      context: ./front
+      args:
+        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}
+    ports:
+      - "443:443"
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./certs/selfsigned.crt:/etc/nginx/ssl/selfsigned.crt:ro
+      - ./certs/selfsigned.key:/etc/nginx/ssl/selfsigned.key:ro
+      # Shared files volume (read-only): Nginx serves files via X-Accel-Redirect.
+      # The path /data/files matches the alias in the internal /protected/ location.
+      - ./files:/data/files:ro

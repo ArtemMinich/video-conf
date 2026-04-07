@@ -9,14 +9,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
@@ -89,16 +86,14 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Resource downloadFile(String path) {
+    public String validateFileForDownload(String path) {
         Path file = resolveSafePath(path);
         if (!Files.exists(file) || !Files.isRegularFile(file)) {
-            throw new IllegalArgumentException("File not found: " + path);
+            // Don't include the filesystem path in the exception — only the user-supplied relative path
+            throw new IllegalArgumentException("File not found");
         }
-        try {
-            return new UrlResource(file.toUri());
-        } catch (MalformedURLException e) {
-            throw new IllegalStateException("Cannot create resource for: " + path, e);
-        }
+        // Return relative path for X-Accel-Redirect (forward slashes, no filesystem prefix)
+        return rootPath.relativize(file).toString().replace('\\', '/');
     }
 
     @Override
