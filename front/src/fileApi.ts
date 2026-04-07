@@ -1,12 +1,12 @@
 import api from './api';
-import type { DirectoryListing, FilePermission, GrantPermissionRequest, UserSearchResult } from './types';
+import type { DirectoryListing, DownloadLink, FilePermission, GrantPermissionRequest, UserSearchResult } from './types';
 
 export const fileApi = {
   listDirectory: (path = '') =>
     api.get<DirectoryListing>('/files', { params: { path } }),
 
-  downloadFile: (path: string) =>
-    api.get('/files/download', { params: { path }, responseType: 'blob' }),
+  getDownloadLink: (path: string) =>
+    api.get<DownloadLink>('/files/download-link', { params: { path } }),
 
   uploadFiles: (path: string, files: File[]) => {
     const formData = new FormData();

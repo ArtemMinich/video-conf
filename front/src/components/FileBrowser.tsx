@@ -113,13 +113,13 @@ function FileBrowser({ userInfo }: FileBrowserProps) {
 
   const handleDownload = async (item: FileItem) => {
     try {
-      const res = await fileApi.downloadFile(item.path);
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const res = await fileApi.getDownloadLink(item.path);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = res.data.url;
       a.download = item.name;
+      document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch {
       alert('Download failed');
     }

@@ -63,9 +63,12 @@ services:
       KEYCLOAK_MASTER_USERNAME: ${KEYCLOAK_ADMIN}
       KEYCLOAK_MASTER_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       FILE_STORAGE_PATH: /data/files
+      FILE_PUBLIC_PATH: /data/public
+      FILE_DOWNLOAD_TTL_MINUTES: "15"
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://localhost,https://10.0.0.1,http://localhost:3000,http://10.0.0.1:3000}
     volumes:
       - ./files:/data/files
+      - ./public-files:/data/public
     depends_on:
       postgres:
         condition: service_healthy

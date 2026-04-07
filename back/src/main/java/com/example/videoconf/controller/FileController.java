@@ -1,27 +1,24 @@
 package com.example.videoconf.controller;
 
 import com.example.videoconf.dto.DirectoryListingDto;
+import com.example.videoconf.dto.DownloadLinkDto;
 import com.example.videoconf.dto.FilePermissionDto;
 import com.example.videoconf.dto.GrantPermissionRequestDto;
 import com.example.videoconf.model.FilePermissionType;
 import com.example.videoconf.model.User;
+import com.example.videoconf.service.DownloadLinkService;
 import com.example.videoconf.service.FilePermissionService;
 import com.example.videoconf.service.FileService;
 import com.example.videoconf.service.SecurityService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/files")
@@ -32,6 +29,7 @@ public class FileController {
     private final FileService fileService;
     private final FilePermissionService filePermissionService;
     private final SecurityService securityService;
+    private final DownloadLinkService downloadLinkService;
 
     @GetMapping
     public DirectoryListingDto listDirectory(@RequestParam(defaultValue = "") String path) {
@@ -39,54 +37,12 @@ public class FileController {
         return fileService.listDirectory(path, user.getId(), securityService.isAdmin());
     }
 
-    /**
-     * File download via Nginx X-Accel-Redirect.
-     *
-     * Flow:
-     * 1. Spring validates auth, permissions, and file existence
-     * 2. Returns X-Accel-Redirect header pointing to Nginx internal location
-     * 3. Nginx intercepts this header and serves the file directly from disk
-     * 4. Client receives the file — never sees the internal path or real filesystem path
-     *
-     * This avoids streaming large files (100MB–2GB) through the JVM heap.
-     */
-    @GetMapping("/download")
-    public ResponseEntity<Void> downloadFile(@RequestParam String path) {
+    @GetMapping("/download-link")
+    public DownloadLinkDto getDownloadLink(@RequestParam String path) {
         if (!securityService.isAdmin()) {
             filePermissionService.checkPermission(securityService.getCurrentUser().getId(), path, FilePermissionType.READ);
         }
-
-        // Validates path traversal safety + file existence. Returns clean relative path.
-        String relativePath = fileService.validateFileForDownload(path);
-        String contentType = fileService.getContentType(path);
-        String filename = relativePath.contains("/")
-                ? relativePath.substring(relativePath.lastIndexOf('/') + 1)
-                : relativePath;
-
-        // X-Accel-Redirect: Nginx strips this header from the client response
-        // and serves the file from the internal /protected/ location.
-        // URL-encode each path segment to handle spaces/special chars in filenames.
-        String accelPath = "/protected/" + encodePath(relativePath);
-
-        return ResponseEntity.ok()
-                .header("X-Accel-Redirect", accelPath)
-                .header(HttpHeaders.CONTENT_TYPE, contentType)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + sanitizeHeaderValue(filename) + "\"")
-                .build();
-    }
-
-    /** URL-encode each path segment (preserving '/' separators). */
-    private String encodePath(String path) {
-        return Arrays.stream(path.split("/"))
-                .map(segment -> URLEncoder.encode(segment, StandardCharsets.UTF_8)
-                        .replace("+", "%20"))
-                .collect(Collectors.joining("/"));
-    }
-
-    /** Strip characters that could enable CRLF header injection. */
-    private String sanitizeHeaderValue(String value) {
-        return value.replaceAll("[\\r\\n\"]", "");
+        return downloadLinkService.createDownloadLink(path);
     }
 
     @PostMapping("/upload")

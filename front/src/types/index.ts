@@ -61,3 +61,8 @@ export interface UserSearchResult {
   firstName: string;
   lastName: string;
 }
+
+export interface DownloadLink {
+  url: string;
+  expiresAt: string;
+}

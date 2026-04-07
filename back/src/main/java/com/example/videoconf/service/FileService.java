@@ -3,16 +3,13 @@ package com.example.videoconf.service;
 import com.example.videoconf.dto.DirectoryListingDto;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
+
 public interface FileService {
 
     DirectoryListingDto listDirectory(String path, Long userId, boolean isAdmin);
 
-    /**
-     * Validates that the file at the given relative path exists and is safe to access.
-     * Returns the normalized relative path for use in X-Accel-Redirect.
-     * Does NOT load the file into memory — Nginx will serve it directly from disk.
-     */
-    String validateFileForDownload(String path);
+    Path resolveExistingFile(String path);
 
     void uploadFile(String path, MultipartFile file);
 
@@ -23,6 +20,4 @@ public interface FileService {
     void createFolder(String path);
 
     void delete(String path);
-
-    String getContentType(String path);
 }

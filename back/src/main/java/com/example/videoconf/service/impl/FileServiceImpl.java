@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 @Service
@@ -75,7 +76,7 @@ public class FileServiceImpl implements FileService {
                 } catch (IOException e) {
                     throw new IllegalStateException("Cannot read file attributes: " + p, e);
                 }
-            }).filter(item -> item != null).toList();
+            }).filter(Objects::nonNull).toList();
             return DirectoryListingDto.builder()
                     .items(items)
                     .canWrite(dirCanWrite)
@@ -86,14 +87,12 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public String validateFileForDownload(String path) {
+    public Path resolveExistingFile(String path) {
         Path file = resolveSafePath(path);
         if (!Files.exists(file) || !Files.isRegularFile(file)) {
-            // Don't include the filesystem path in the exception — only the user-supplied relative path
             throw new IllegalArgumentException("File not found");
         }
-        // Return relative path for X-Accel-Redirect (forward slashes, no filesystem prefix)
-        return rootPath.relativize(file).toString().replace('\\', '/');
+        return file;
     }
 
     @Override
@@ -153,7 +152,6 @@ public class FileServiceImpl implements FileService {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to assemble file", e);
         }
-        // Cleanup chunks
         try (Stream<Path> walk = Files.walk(chunksDir)) {
             walk.sorted(Comparator.reverseOrder()).forEach(p -> {
                 try { Files.delete(p); } catch (IOException ignored) {}
@@ -204,17 +202,6 @@ public class FileServiceImpl implements FileService {
             log.info("Deleted: {}", path);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to delete: " + path, e);
-        }
-    }
-
-    @Override
-    public String getContentType(String path) {
-        Path file = resolveSafePath(path);
-        try {
-            String type = Files.probeContentType(file);
-            return type != null ? type : "application/octet-stream";
-        } catch (IOException e) {
-            return "application/octet-stream";
         }
     }
 
